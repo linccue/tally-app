@@ -95,7 +95,7 @@ class AutoBillIntake(
                 amountMinor = request.amountMinor,
             )
         } catch (tallyError: TallyError) {
-            AutoBillOutcome.Failed(tallyError.message ?: "这一笔没有记上")
+            AutoBillOutcome.Failed(tallyError.message.ifBlank { "这一笔没有记上" })
         } catch (failure: Exception) {
             AutoBillOutcome.Failed(failure.message ?: "这一笔没有记上")
         }

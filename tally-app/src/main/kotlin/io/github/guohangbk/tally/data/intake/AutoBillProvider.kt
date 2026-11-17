@@ -65,7 +65,13 @@ class AutoBillProvider : ContentProvider() {
         }
     }
 
-    /** Bundle 的键与 Scheme 的查询参数同名，省得采集端记两套字段。 */
+    /**
+     * Bundle 的键与 Scheme 的查询参数同名，省得采集端记两套字段。
+     *
+     * 这里刻意用无类型 [Bundle.get]：采集端可能塞 String、Int 或 Double，
+     * 统一 toString() 后再交给 Scheme 解析，比按类型逐个取值更耐错。
+     */
+    @Suppress("DEPRECATION")
     private fun Bundle?.toAutoBillUri(): Uri? {
         if (this == null) return null
         val builder = Uri.Builder()
