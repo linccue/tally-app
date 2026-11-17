@@ -28,7 +28,7 @@ import io.github.guohangbk.tally.domain.model.ReimburseStatus
 
 /**
  * 标记体系（设计板 §03）：同一标记在记账页、详情、批量三处的图形、文案、口径必须完全一致。
- * 金色只留给「小莉 / 周期 / 分期」这三类自动产生的账，人工标记一律墨绿或青灰。
+ * 金色只留给「小莉 / 周期 / 分期 / 自动记账」这四类机器产生的账，人工标记一律墨绿或青灰。
  */
 enum class MarkerTone { BRAND, OUTLINE, SLATE, GOLD, EXPENSE }
 
@@ -62,6 +62,8 @@ fun billBadges(item: BillListItem): List<BillBadge> {
         BillSource.IMPORT.name -> badges += BillBadge("import", "导入", MarkerTone.EXPENSE)
         BillSource.VOICE.name, BillSource.SCREENSHOT.name ->
             badges += BillBadge("ai", "速记", MarkerTone.GOLD)
+        // 自动记账写进来的那类：和周期/分期一样是机器产生，但不属于本地任何任务。
+        BillSource.AUTO.name -> badges += BillBadge("bolt", "自动", MarkerTone.GOLD)
         else -> Unit
     }
     return badges

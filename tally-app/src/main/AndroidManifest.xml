@@ -141,6 +141,37 @@
                 android:resource="@xml/widget_streak" />
         </receiver>
 
+        <!--
+          第三方自动记账的两个入口（参数与实现见 data/intake）：
+          1) tally://addbill —— 通用 URL Scheme，任何自动化工具都能用；
+             34+ 校验调用方包名，更早的版本需用户在设置里打开「允许任意应用」。
+          2) content://<applicationId>.autobill —— 自动记账 App 走的通道，
+             所有版本都能拿到 getCallingPackage()，默认只认白名单里的采集端。
+        -->
+        <activity
+            android:name=".ui.intake.AutoBillActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="addbill"
+                    android:scheme="tally" />
+            </intent-filter>
+        </activity>
+
+        <!-- 自动记账写入的稳定通道：不做查询/插入，只接受 call("addbill")，来源在代码里校验。 -->
+        <provider
+            android:name=".data.intake.AutoBillProvider"
+            android:authorities="${applicationId}.autobill"
+            android:exported="true" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

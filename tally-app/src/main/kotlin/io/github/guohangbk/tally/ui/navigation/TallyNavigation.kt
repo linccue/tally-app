@@ -81,6 +81,7 @@ import io.github.guohangbk.tally.ui.recurring.RecurringScreen
 import io.github.guohangbk.tally.ui.reimbursement.ReimbursementScreen
 import io.github.guohangbk.tally.ui.recycle.RecycleBinScreen
 import io.github.guohangbk.tally.ui.search.SearchScreen
+import io.github.guohangbk.tally.ui.settings.AutoBillSettingsScreen
 import io.github.guohangbk.tally.ui.settings.BillKeypadSettingsScreen
 import io.github.guohangbk.tally.ui.settings.GuideScreen
 import io.github.guohangbk.tally.ui.settings.LicenseScreen
@@ -103,6 +104,7 @@ object Routes {
     const val NOTIFICATIONS = "settings/notifications"
     /** 记账键盘（设置 → 记账偏好）：记账页备注下面那一排 chip 的开关，以后加「标签」也归它。 */
     const val BILL_KEYPAD = "settings/keypad"
+    const val AUTO_BILL = "settings/auto-bill"
     const val KEYWORD_RULES = "keyword-rules"
     const val RECYCLE = "recycle"
     const val LEDGERS = "ledgers"
@@ -583,12 +585,16 @@ private fun TallyAppShell(
                             onOpenBillKeypad = { navController.navigate(Routes.BILL_KEYPAD) },
                             onOpenRecycle = { navController.navigate(Routes.RECYCLE) },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) },
+                            onOpenAutoBill = { navController.navigate(Routes.AUTO_BILL) },
                             onOpenGuide = { navController.navigate(Routes.GUIDE) },
                             onOpenLicense = { navController.navigate(Routes.LICENSE) },
                         )
                     }
                     composable(Routes.NOTIFICATIONS) {
                         NotificationSettingsScreen(onBack = { navController.popBackStack() })
+                    }
+                    composable(Routes.AUTO_BILL) {
+                        AutoBillSettingsScreen(onBack = { navController.popBackStack() })
                     }
                     composable(Routes.BILL_KEYPAD) {
                         BillKeypadSettingsScreen(

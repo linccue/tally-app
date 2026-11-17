@@ -169,6 +169,25 @@ class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
         }
     }
 
+    // ---- 自动记账接口 ------
+    // 两种开关都是设备本地偏好：换机后写入口默认重新收紧，不用把「我允许过谁」带过去。
+
+    fun setAutoBillEnabled(enabled: Boolean) = persist(
+        notice = if (enabled) {
+            "自动记账接口已开启 · 只接受已接入的采集端"
+        } else {
+            "自动记账接口已关闭 · 不再接收任何写入"
+        },
+    ) {
+        graph.preferences.setAutoBillEnabled(enabled)
+    }
+
+    fun setAutoBillAllowAnyApp(enabled: Boolean) = persist(
+        notice = if (enabled) "已允许任意应用写入 · 仅建议在排查问题时打开" else "已恢复为只接受已接入的采集端",
+    ) {
+        graph.preferences.setAutoBillAllowAnyApp(enabled)
+    }
+
     // ---- 检查更新 ------
     // 只在用户点按钮时打一次公开仓的 latest release：不轮询、不自动下载、不静默安装。
 
@@ -216,6 +235,8 @@ class SettingsViewModel(private val graph: AppGraph) : ViewModel() {
             graph.preferences.setShowThousandsSeparator(TallySettings.DEFAULT.showThousandsSeparator)
             graph.preferences.setTimePrecision(TallySettings.DEFAULT.timePrecision)
             graph.preferences.setAssistantEnabled(TallySettings.DEFAULT.assistantEnabled)
+            graph.preferences.setAutoBillEnabled(TallySettings.DEFAULT.autoBillEnabled)
+            graph.preferences.setAutoBillAllowAnyApp(TallySettings.DEFAULT.autoBillAllowAnyApp)
         }
     }
 

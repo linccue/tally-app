@@ -109,6 +109,8 @@ fun SettingsScreen(
     onOpenTags: () -> Unit,
     /** 回收站：删除找回从气泡搬到页面，所以入口跟数据放在一起。 */
     onOpenRecycle: () -> Unit,
+    /** 自动记账：第三方采集端写入的开关与接入地址，跟导入同属「账从哪来」。 */
+    onOpenAutoBill: () -> Unit,
     /** 记账键盘：记账页备注下面那排 chip 的开关（图片 / 账单时间 / 报销 / 排除 / 标签）。 */
     onOpenBillKeypad: () -> Unit,
     /** 提醒与通知独立一页（T-01）：这一页只管开关与时刻，声音与打扰等级归系统渠道。 */
@@ -323,6 +325,13 @@ fun SettingsScreen(
                     subtitle = "删掉的账单先留着 · 可恢复或彻底删除",
                     iconKey = "recycle",
                     onClick = onOpenRecycle,
+                )
+                SettingsDivider()
+                SettingsNavRow(
+                    title = "自动记账",
+                    subtitle = "接收自动记账 App 写入 · tally://addbill",
+                    iconKey = "bolt",
+                    onClick = onOpenAutoBill,
                 )
             }
 
