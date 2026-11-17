@@ -94,7 +94,7 @@ fun AutoBillSettingsScreen(onBack: () -> Unit) {
                     description = if (settings.autoBillAllowAnyApp) {
                         "已开启 · 任何应用都能通过 tally://addbill 记一笔，谨慎使用"
                     } else {
-                        "已关闭 · 只接受已接入的自动记账 App"
+                        "已关闭 · 只接受已接入的自动记账 App；其它应用用 tally:// 链接写入时要开这一项"
                     },
                 )
             }

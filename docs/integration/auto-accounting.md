@@ -55,8 +55,9 @@ tally://addbill?type=0&money=29.85&time=2026-11-18 12:30:00&remark=午饭&catena
 
 - 默认开接口、**只接受白名单来源**（`net.ankio.auto`，以及用于调试的 `com.android.shell`）。
 - ContentProvider 的 `getCallingPackage()` 由系统按 binder uid 填写，**无法伪造**，所以自动记账走这条通道。
-- Scheme 通道在 Android 13 及以下拿不到调用方，默认按「未知来源」拒绝；需要通用 Scheme 的用户可以在
-  设置 → 自动记账 → 允许任意应用 里显式放开。
+- Scheme 通道在 Android 13 及以下拿不到调用方；即使在 14+，部分 ROM（实测 HyperOS / Android 17）对
+  `adb shell am start` 也返回 `null`。拿不到来源一律按「未知来源」拒绝，Toast 里直接告诉用户去开
+  设置 → 自动记账 → 允许任意应用写入。
 - 关掉总开关后两条通道都写不进来。
 
 ## 幂等与去重
@@ -90,15 +91,22 @@ tally://addbill?type=0&money=29.85&time=2026-11-18 12:30:00&remark=午饭&catena
 ```bash
 # 1. 编译安装（仓库自带测试签名，直接出包）
 ./gradlew :tally-app:assembleDebug
+adb install -r tally-app/build/outputs/apk/debug/tally-app-debug.apk
 
-# 2. 用 adb 模拟一次写入（shell 已在白名单里；若关掉了「只接受已接入应用」，也能通）
-adb shell am start -a android.intent.action.VIEW \
-  -d "tally://addbill?type=0&money=29.85&time=2026-11-18%2012:30:00&remark=test&catename=餐饮&id=test-001"
+# 2. 模拟自动记账写入：走 Provider 这条真通道（shell 的 uid 会被 getCallingPackage 认出来）
+#    注意 content 的 extras 要用 --extra key:type:value（--arg 只填 call() 的 arg 字符串，进不了 Bundle）
+adb shell content call --uri content://io.github.guohangbk.tally.autobill --method addbill \
+  --extra type:s:0 --extra money:s:29.85 --extra time:s:"2026-11-18 12:30:00" \
+  --extra remark:s:test --extra catename:s:餐饮 --extra id:s:test-001
+# 预期：Bundle[{ok=true, message=已自动记账 · 三餐 · ¥29.85, billId=…, amountMinor=2985}]
 
 # 3. 再发一次同样的 id，应当静默跳过（账单仍是 1 笔）
+# 预期：Bundle[{ok=true, message=这一笔已经记过了}]
 ```
 
-预期：Toast「已自动记账 · 三餐 · ¥29.85」，首页当天多一笔带「自动」角标的支出。
+Scheme 那条路要用 `adb shell am start -a android.intent.action.VIEW -d "tally://addbill?…"` 验证，
+但如上所述 shell 启动的 Intent 在部分 ROM 上 `launchedFromPackage` 为 `null`，会先被拦下——
+这是预期行为，先在设置里打开「允许任意应用写入」再测。
 
 ## 文件清单
 

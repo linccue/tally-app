@@ -222,8 +222,13 @@ sealed interface AutoBillOutcome {
     ) : AutoBillOutcome
 
     data class Blocked(val callerPackage: String?) : AutoBillOutcome {
+        /** 拿不到来源时不能只说「未接入」：用户根本不知道该去动哪个开关。 */
         val message: String
-            get() = "已拦截自动记账写入 · 来源 ${callerPackage ?: "未知应用"} 未接入"
+            get() = if (callerPackage == null) {
+                "已拦截自动记账写入 · 认不出调用来源，请在 设置 · 自动记账 里打开「允许任意应用写入」"
+            } else {
+                "已拦截自动记账写入 · 来源 $callerPackage 未接入"
+            }
     }
 
     data class Failed(val reason: String) : AutoBillOutcome
@@ -233,8 +238,9 @@ sealed interface AutoBillOutcome {
  * 已接入的采集端。
  *
  * `net.ankio.auto` 是「自动记账」App；它通过 [AutoBillProvider] 写入，包名由 ContentProvider
- * 的 `getCallingPackage()` 给出，无法伪造。Scheme 那条路在 Android 14 以下拿不到调用方，
- * 因此默认不放行，需要用户在设置里打开「允许任意应用」。
+ * 的 `getCallingPackage()` 给出，无法伪造。Scheme 那条路即使在 Android 14+ 也可能拿不到调用方
+ * （实测 HyperOS / Android 17 对 `adb shell am start` 返回 null），因此默认不放行，
+ * 需要用户在设置里打开「允许任意应用」。
  */
 object AutoBillCallers {
     /**

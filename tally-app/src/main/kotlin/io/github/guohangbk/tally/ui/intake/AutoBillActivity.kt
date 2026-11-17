@@ -34,8 +34,10 @@ class AutoBillActivity : ComponentActivity() {
         submitted = true
 
         val uri = intent?.data
-        // 34+ 才拿得到「是谁把这个 Intent 发过来的」；更早的版本只能当未知来源，
-        // 默认被白名单挡掉，需要用户显式打开「允许任意应用」。自动记账走 Provider，不受这条限制。
+        // 34+ 才拿得到「是谁把这个 Intent 发过来的」，而且拿到的不一定准：
+        // 部分 ROM（实测 HyperOS / Android 17）对 `adb shell am start` 返回 null。
+        // 拿不到就只能当未知来源，默认被白名单挡下，要用户显式打开「允许任意应用」。
+        // 自动记账走 Provider，不受这条限制。
         val caller = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             launchedFromPackage
         } else {
