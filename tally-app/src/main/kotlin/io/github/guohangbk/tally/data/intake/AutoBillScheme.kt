@@ -68,8 +68,8 @@ object AutoBillScheme {
             ?: return AutoBillParsed.Rejected("money 缺失或不是合法金额")
         if (amountMinor <= 0L) return AutoBillParsed.Rejected("金额必须大于 0")
 
-        val currency = params.getQueryParameter("currency")?.trim()?.uppercase()
-        if (!currency.isNullOrEmpty() && currency != "CNY") {
+        val currency = normalizeCurrency(params.getQueryParameter("currency"))
+        if (currency.isNotEmpty() && currency != "CNY") {
             return AutoBillParsed.Rejected("只支持人民币（currency=CNY）")
         }
 
@@ -105,6 +105,27 @@ object AutoBillScheme {
         }
         return parts.firstOrNull()?.trim()?.ifEmpty { null } to
             parts.getOrNull(1)?.trim()?.ifEmpty { null }
+    }
+
+    /**
+     * 币种归一化：只接受人民币，但调用方给的写法五花八门。
+     *
+     * 自动记账（AutoAccounting）的 `currency` 字段是 CurrencyModel 的 JSON，
+     * 形如 `{"code":"CNY","rate":1}`；直接按字符串比较会把人民币当成外币拒掉。
+     * 所以这里先抽出币种代码，再认几个人民币的常见别名，其余交给上层拒绝。
+     */
+    private fun normalizeCurrency(raw: String?): String {
+        val text = raw?.trim().orEmpty()
+        if (text.isEmpty()) return ""
+        val code = if (text.startsWith("{")) {
+            Regex("\"code\"\\s*:\\s*\"([^\"]+)\"").find(text)?.groupValues?.getOrNull(1).orEmpty()
+        } else {
+            text
+        }.trim().trim('"', '\'').uppercase()
+        return when (code) {
+            "", "CNY", "RMB", "CNH", "¥", "￥", "人民币", "元" -> "CNY"
+            else -> code
+        }
     }
 
     /** 返回 (毫秒时间戳, 是否带时刻)。没给时间就是「现在」，并且是带时刻的。 */
