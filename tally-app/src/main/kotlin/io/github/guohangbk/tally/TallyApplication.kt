@@ -15,6 +15,12 @@ class TallyApplication : Application() {
     lateinit var graph: AppGraph
         private set
 
+    /**
+     * 进程刚被拉起时，ContentProvider 的 call() 会先于 onCreate 里赋值 graph 到达，
+     * 直接读 graph 会炸 lateinit。写入口用这把门闸等它就位。
+     */
+    private val graphReady = java.util.concurrent.CountDownLatch(1)
+
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
@@ -29,6 +35,7 @@ class TallyApplication : Application() {
         installCrashRecorder()
         DebugLog.log("Perf", "Application.onCreate 开始")
         graph = AppGraph(this)
+        graphReady.countDown()
         DebugLog.log("Perf", "AppGraph 构建 +${System.currentTimeMillis() - createAt}ms")
         // 启动即补执行：WorkManager 在国产 ROM 上可能被延迟，启动路径必须自己兜底。
         appScope.launch {
@@ -66,6 +73,10 @@ class TallyApplication : Application() {
             previous?.uncaughtException(thread, cause)
         }
     }
+
+    /** 等 AppGraph 建好；进程刚被拉起时 Provider 的 call() 会抢在 onCreate 前面。 */
+    fun awaitGraph(timeoutMs: Long = 5_000L): AppGraph? =
+        if (graphReady.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) graph else null
 
     companion object {
         fun from(context: android.content.Context): TallyApplication =

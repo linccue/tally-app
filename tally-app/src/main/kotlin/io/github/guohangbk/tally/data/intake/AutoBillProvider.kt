@@ -38,11 +38,13 @@ class AutoBillProvider : ContentProvider() {
         val caller = callingPackage
         val application = context.applicationContext as? TallyApplication
             ?: return reply(ok = false, message = "Tally 还没准备好")
+        val graph = application.awaitGraph()
+            ?: return reply(ok = false, message = "Tally 还在启动，请稍后重试")
 
         val outcome = runCatching {
             runBlocking {
                 withContext(Dispatchers.IO) {
-                    application.graph.autoBillIntake.submit(extras.toAutoBillUri(), caller)
+                    graph.autoBillIntake.submit(extras.toAutoBillUri(), caller)
                 }
             }
         }.getOrElse { failure ->
