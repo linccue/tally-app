@@ -14,6 +14,12 @@ enum class BillSource {
     RECURRING,
     INSTALLMENT,
     IMPORT,
+
+    /**
+     * 第三方自动记账写入的账（目前是「自动记账」App 的 tally://addbill 接口）。
+     * 与周期/分期不同，这类账没有本地任务可回溯，只能靠 external_id 与角标说明来源。
+     */
+    AUTO,
 }
 
 /** 报销状态；只影响报销管理，不改变原始支出的收支统计归属。 */

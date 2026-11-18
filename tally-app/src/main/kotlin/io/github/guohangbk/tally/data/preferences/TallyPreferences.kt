@@ -36,6 +36,10 @@ class TallyPreferences(private val dataStore: DataStore<Preferences>) {
     /** 标签：记账页那枚 chip 的开关，归设置 → 记账键盘。 */
     val TAG_ENABLED = booleanPreferencesKey("tag_enabled")
         val ASSISTANT_ENABLED = booleanPreferencesKey("assistant_enabled")
+        /** 自动记账接口：tally://addbill 是否接收第三方写入。 */
+        val AUTO_BILL_ENABLED = booleanPreferencesKey("auto_bill_enabled")
+        /** 自动记账接口是否接受任意应用；关闭时只认已接入白名单。 */
+        val AUTO_BILL_ALLOW_ANY_APP = booleanPreferencesKey("auto_bill_allow_any_app")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val SHOW_CURRENCY_SYMBOL = booleanPreferencesKey("show_currency_symbol")
         val SHOW_THOUSANDS_SEPARATOR = booleanPreferencesKey("show_thousands_separator")
@@ -85,6 +89,9 @@ class TallyPreferences(private val dataStore: DataStore<Preferences>) {
             excludeEnabled = prefs[Keys.EXCLUDE_ENABLED] ?: true,
             tagEnabled = prefs[Keys.TAG_ENABLED] ?: true,
             assistantEnabled = prefs[Keys.ASSISTANT_ENABLED] ?: false,
+            // 默认开：自动记账是「装上就能用」的功能，关掉它需要一个明确的理由（比如不想被任何应用写账）。
+            autoBillEnabled = prefs[Keys.AUTO_BILL_ENABLED] ?: true,
+            autoBillAllowAnyApp = prefs[Keys.AUTO_BILL_ALLOW_ANY_APP] ?: false,
             themeMode = prefs[Keys.THEME_MODE]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM,
             showCurrencySymbol = prefs[Keys.SHOW_CURRENCY_SYMBOL] ?: true,
@@ -130,6 +137,17 @@ class TallyPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setTagEnabled(enabled: Boolean) = put(Keys.TAG_ENABLED, enabled)
 
     suspend fun setAssistantEnabled(enabled: Boolean) = put(Keys.ASSISTANT_ENABLED, enabled)
+
+    suspend fun setAutoBillEnabled(enabled: Boolean) = put(Keys.AUTO_BILL_ENABLED, enabled)
+
+    suspend fun setAutoBillAllowAnyApp(enabled: Boolean) = put(Keys.AUTO_BILL_ALLOW_ANY_APP, enabled)
+
+    /** 写入路径在 IO 线程上读一次就够：开关变更后下一笔自动生效，不需要观察。 */
+    suspend fun autoBillEnabled(): Boolean =
+        dataStore.data.map { it[Keys.AUTO_BILL_ENABLED] ?: true }.first()
+
+    suspend fun autoBillAllowAnyApp(): Boolean =
+        dataStore.data.map { it[Keys.AUTO_BILL_ALLOW_ANY_APP] ?: false }.first()
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[Keys.THEME_MODE] = mode.name }
@@ -308,6 +326,10 @@ data class TallySettings(
     /** 标签：记账页要不要出现「标签」chip；默认开，管理页、筛选与批量打标签不受它影响。 */
     val tagEnabled: Boolean = true,
     val assistantEnabled: Boolean,
+    /** 自动记账接口：默认开，关闭后 tally://addbill 一律不写库。 */
+    val autoBillEnabled: Boolean = true,
+    /** 是否接受任意应用写入；默认关，只认已登记过的采集端包名。 */
+    val autoBillAllowAnyApp: Boolean = false,
     val themeMode: ThemeMode,
     val showCurrencySymbol: Boolean,
     val showThousandsSeparator: Boolean,
@@ -345,6 +367,8 @@ data class TallySettings(
             excludeEnabled = true,
             tagEnabled = true,
             assistantEnabled = false,
+            autoBillEnabled = true,
+            autoBillAllowAnyApp = false,
             themeMode = ThemeMode.SYSTEM,
             showCurrencySymbol = true,
             showThousandsSeparator = true,

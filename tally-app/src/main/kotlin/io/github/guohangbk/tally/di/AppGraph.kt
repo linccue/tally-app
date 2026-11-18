@@ -29,6 +29,7 @@ import io.github.guohangbk.tally.data.importexport.ExportService
 import io.github.guohangbk.tally.data.ocr.MlKitTextReader
 import io.github.guohangbk.tally.data.ocr.ScreenshotTextReader
 import io.github.guohangbk.tally.data.importexport.ImportService
+import io.github.guohangbk.tally.data.intake.AutoBillIntake
 import io.github.guohangbk.tally.data.repository.BillRepository
 import io.github.guohangbk.tally.data.repository.BudgetRepository
 import io.github.guohangbk.tally.data.repository.CategoryRepository
@@ -145,6 +146,18 @@ class AppGraph(
         recurringRepository = recurringRepository,
         installmentRepository = installmentRepository,
         billRepository = billRepository,
+    )
+
+    /**
+     * 第三方自动记账写入（`tally://addbill` 与 `content://…autobill`）。
+     * 两条通道共用这一份：分类/账本解析、白名单与幂等都在这里，不各写一套。
+     */
+    val autoBillIntake: AutoBillIntake = AutoBillIntake(
+        ledgerRepository = ledgerRepository,
+        billRepository = billRepository,
+        ledgerDao = database.ledgerDao(),
+        categoryDao = database.categoryDao(),
+        preferences = preferences,
     )
 
     /** 通知的唯一出口：渠道、锁屏脱敏与点达 intent 都在它里面。 */

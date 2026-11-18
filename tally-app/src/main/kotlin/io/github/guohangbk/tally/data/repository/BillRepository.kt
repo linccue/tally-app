@@ -449,6 +449,13 @@ class BillRepository(
         billDao.findByExternalId(externalId)?.id?.let { find(it) }
 
     /**
+     * 自动记账的幂等判断：回收站里的同一单号也算「这一笔已经在库里」。
+     * 命中就整笔跳过，不再触发 upsert——REPLACE 会先把软删的那行物理删掉。
+     */
+    suspend fun existsByExternalIdAny(externalId: String): Boolean =
+        billDao.findByExternalIdAny(externalId) != null
+
+    /**
      * 周期/分期生成的账单入口。幂等键是 (rule|plan, period_index)：
      * 已存在同期的**任何**账单时直接返回 null，补执行重复触发也不会多记一笔。
      *

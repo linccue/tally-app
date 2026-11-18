@@ -502,6 +502,13 @@ interface BillDao {
     @Query("SELECT * FROM bill WHERE external_id = :externalId AND deleted_at IS NULL LIMIT 1")
     suspend fun findByExternalId(externalId: String): BillEntity?
 
+    /**
+     * 自动记账的幂等查询：回收站里的同一单号也算「记过了」。
+     * 只看有效行的话，用户删掉的那笔会被 (REPLACE) 物理抹掉再插一条——删除就白删了。
+     */
+    @Query("SELECT * FROM bill WHERE external_id = :externalId LIMIT 1")
+    suspend fun findByExternalIdAny(externalId: String): BillEntity?
+
     /** 周期/分期幂等：同一任务（或计划）的同一期只允许一笔有效账单。 */
     @Query(
         "SELECT * FROM bill WHERE recurrence_rule_id = :ruleId AND period_index = :periodIndex " +
